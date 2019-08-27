@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace DAL.Migrations
 {
-    public partial class NEW : Migration
+    public partial class NeeoSocialCoreFirst : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -112,6 +112,26 @@ namespace DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "PostImage",
+                columns: table => new
+                {
+                    PostImageID = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    PostID = table.Column<long>(nullable: false),
+                    imagePath = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PostImage", x => x.PostImageID);
+                    table.ForeignKey(
+                        name: "FK_PostImage_Post_PostID",
+                        column: x => x.PostID,
+                        principalTable: "Post",
+                        principalColumn: "PostID",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Reaction",
                 columns: table => new
                 {
@@ -134,24 +154,25 @@ namespace DAL.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SubComment",
+                name: "SharePost",
                 columns: table => new
                 {
-                    SubCommentID = table.Column<int>(nullable: false)
+                    SharePostID = table.Column<long>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    CommentID = table.Column<int>(nullable: false),
+                    PostID = table.Column<long>(nullable: false),
                     UserID = table.Column<long>(nullable: false),
-                    commentText = table.Column<string>(nullable: true),
-                    commentTime = table.Column<DateTime>(nullable: false)
+                    text = table.Column<string>(nullable: true),
+                    shareTime = table.Column<DateTime>(nullable: false),
+                    updateTime = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_SubComment", x => x.SubCommentID);
+                    table.PrimaryKey("PK_SharePost", x => x.SharePostID);
                     table.ForeignKey(
-                        name: "FK_SubComment_Comment_CommentID",
-                        column: x => x.CommentID,
-                        principalTable: "Comment",
-                        principalColumn: "CommentID",
+                        name: "FK_SharePost_Post_PostID",
+                        column: x => x.PostID,
+                        principalTable: "Post",
+                        principalColumn: "PostID",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -164,8 +185,7 @@ namespace DAL.Migrations
                     CommentID = table.Column<int>(nullable: false),
                     UserID = table.Column<long>(nullable: false),
                     reactionType = table.Column<int>(nullable: false),
-                    reactionTime = table.Column<DateTime>(nullable: false),
-                    SubCommentID = table.Column<int>(nullable: true)
+                    reactionTime = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -176,12 +196,6 @@ namespace DAL.Migrations
                         principalTable: "Comment",
                         principalColumn: "CommentID",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_SubReaction_SubComment_SubCommentID",
-                        column: x => x.SubCommentID,
-                        principalTable: "SubComment",
-                        principalColumn: "SubCommentID",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
@@ -190,24 +204,24 @@ namespace DAL.Migrations
                 column: "PostID");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PostImage_PostID",
+                table: "PostImage",
+                column: "PostID");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Reaction_PostID",
                 table: "Reaction",
                 column: "PostID");
 
             migrationBuilder.CreateIndex(
-                name: "IX_SubComment_CommentID",
-                table: "SubComment",
-                column: "CommentID");
+                name: "IX_SharePost_PostID",
+                table: "SharePost",
+                column: "PostID");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SubReaction_CommentID",
                 table: "SubReaction",
                 column: "CommentID");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_SubReaction_SubCommentID",
-                table: "SubReaction",
-                column: "SubCommentID");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -219,7 +233,13 @@ namespace DAL.Migrations
                 name: "FriendRequest");
 
             migrationBuilder.DropTable(
+                name: "PostImage");
+
+            migrationBuilder.DropTable(
                 name: "Reaction");
+
+            migrationBuilder.DropTable(
+                name: "SharePost");
 
             migrationBuilder.DropTable(
                 name: "SubReaction");
@@ -229,9 +249,6 @@ namespace DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "UserMedia");
-
-            migrationBuilder.DropTable(
-                name: "SubComment");
 
             migrationBuilder.DropTable(
                 name: "Comment");

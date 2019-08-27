@@ -420,6 +420,7 @@
         <script src="~/js/script.js"></script>
         <script src="~/js/cookies.js"></script>
         <script src="~/js/jquery.blockUI.js"></script>
+        <script src="~/js/moment.js"></script>
         <script src="~/js/vue.js"></script>
         <script src="~/js/axios.js"></script>
         <script src="~/js/toastr.min.js"></script>
@@ -435,9 +436,6 @@
             });
         </script>
         <script>
-        @*Cookies.get('name') !== null;*@
-        @*Cookies.set('name', token, { expires: 10, secure: true  });*@
-        @*Cookies.remove('name', token);*@
             var root = new Vue
                 ({
                     el: '#app',
@@ -485,80 +483,74 @@
                             if (this.UserReg.dateOfBirth == "") { toastr.error("Date of Birth Required", "Error!") }
                             if (this.UserReg.password.length <= 5) { toastr.error("Password Required Or Minimum Length(6)", "Error!"); }
                             if (this.UserReg.email == "") { toastr.error("Email Required", "Error!"); }
-                            if (this.isEmailValid(this.UserReg.email) == false && this.UserReg.email != "") {toastr.error("Invalid Email", "Error!"); }                  
+                            if (this.isEmailValid(this.UserReg.email) == false && this.UserReg.email != "") {toastr.error("Invalid Email", "Error!"); }
                             if (this.UserReg.name == "") { toastr.error("Name Required", "Error!") }
                             if (this.UserReg.name != "" && this.isEmailValid(this.UserReg.email) == true && this.UserReg.email != "" && this.UserReg.password != "" && !(this.UserReg.password.length <= 5) && this.UserReg.dateOfBirth != "" && this.UserReg.city != "" && this.UserReg.country != "" && !(this.UserReg.country.length >= 4)) {
-                                var vm = this;
-                                $.ajax(
-                                    {
-                                        type: "POST",
-                                        url: "/Authentication/UserRegister" /*"Authentication/registration"*/,
-                                        datatype: "application/json",
-                                        contentType: "application/json",
-                                        data: {
-                                            "name": this.UserReg.name,
-                                            "email": this.UserReg.email,
-                                            "password": this.UserReg.password,
-                                            "dateOfBirth": this.UserReg.dateOfBirth,
-                                            "gender": this.UserReg.gender,
-                                            "city": this.UserReg.city,
-                                            "country": this.UserReg.country,
-                                        },
-                                        success: function (res) {
-                                            if (res.code == 200 && res.message == "User registered") {
-                                                toastr.success("Succefully Registered in", "Success!");
-                                                Cookies.set('neeoSocialToken', res.token, { expires: 365, httpOnly: true});
-                                                //window.location = "/Dashboard/home";
-                                            }
+                                var UserRegDate = this.UserReg.dateOfBirth.split('-');
+                                UserRegDate = moment.utc(UserRegDate[2] + "-" + UserRegDate[1] + "-" + UserRegDate[0]);
+                                  var vm = this;
+                                  $.ajax(
+                                      {
+                                          type: "POST",
+                                          url: "/AuthenticationApi/UserRegister",
+                                          contentType: "application/json",
+                                          dataType: "json",
+                                          data: JSON.stringify({
+                                              "name": this.UserReg.name,
+                                              "email": this.UserReg.email,
+                                              "password": this.UserReg.password,
+                                              "dateOfBirth": UserRegDate,
+                                              "gender": this.UserReg.gender,
+                                              "city": this.UserReg.city,
+                                              "country": this.UserReg.country
+                                          }),
+                                          success: function (res) {
+                                              if (res.code == 200 && res.message == "User registered") {
+                                                  toastr.success("Succefully Registered in", "Success!");
+                                                  Cookies.set('NeeoSocialuserID', res.userID);
+                                                  //window.location = "/Dashboard/home";
+                                              }
+                                              if (res.code == 400 && res.message == "Email already exist") {
+                                                  toastr.error("Email Already Exist", "Error!");
+                                              }
+                                              if (res.code == 400 && res.message == "Unauthorized Changes") {
+                                                  toastr.error("Unauthorized Changes", "Error!");
+                                              }
+                                               if (res.code == 500 && res.message == "Server Error") {
+                                                  toastr.error("Something went worng, Please Try again", "Error!", "Error!");
+                                              }
 
-                                            if (res.code == 400 && res.message == "Email already exist") {
-                                                toastr.error("Email Already Exist", "Error!");
-                                            }
-                                            if (res.code == 400 && res.message == "Unauthorized Changes") {
-                                                toastr.error("Unauthorized Changes", "Error!");
-                                            }
-                                             if (res.code == 500 && res.message == "Server Error") {
-                                                toastr.error("Something went worng, Please Try again", "Error!", "Error!");
-                                            }
+                                          },
+                                          error: function (data) {
+                                              toastr.error("Something went worng, Please Try again", "Error!");
 
-                                        },
-                                        error: function (data) {
-                                            toastr.error("Something went worng, Please Try again", "Error!");
-
-                                        }
-                                    }
-                                );
+                                          }
+                                      }
+                                  );
                             }
                         },
                         login() {
-                           
+
                             if (this.User.password == "" || this.User.password.length <= 5) { toastr.error("Password Required Or Minimum Length 6", "Error!"); }
                             if (this.User.email == "") { toastr.error("Email Required", "Error!"); }
                             if (this.isEmailValid(this.User.email) == false && this.User.email != "") {toastr.error("Invalid Email", "Error!"); }
                             if (this.User.email != "" && this.isEmailValid(this.User.email) == true && this.User.password != "" && !(this.User.password.length <= 5)) {
-                                alert("ok");
-                               
                                 $.ajax(
-                                
-                                    {
-                                     
+                                         {
                                         type: "POST",
-                                        url: "/Authentication/Login",  
-                                        datatype: "application/json",
+                                        url: "/AuthenticationApi/Login",
                                         contentType: "application/json",
-                                       
-                                        data: {
-                                            "email": this.User.email,
-                                            "password": this.User.password,
-                                        },
+                                        dataType: "json",
+                                        data: JSON.stringify({
+                                           "email": this.User.email,
+                                           "password": this.User.password,
+                                        }),
                                         success: function (res) {
-                                            alert("res");
                                             if (res.code == 200 && res.message == "logged in") {
-                                                //Cookies.set('neeoSocialToken', res.token, { expires: 365, secure: true, secure: true });
+                                                Cookies.set('NeeoSocialuserID', res.userID);
                                                 toastr.success("Succefully Logged in", "Success!");
-                                                
                                             }
-                                            if (res.code == 400 && res.message == "Invalid User") {
+                                            else if (res.code == 400 && res.message == "Invalid user") {
                                                 toastr.error("Incorrect Email or Password", "Error!");
                                             }
                                         },
@@ -572,13 +564,12 @@
                         },
                         logout()
                         {
-                                                
                             $.ajax(
                                    {
                                        type: "POST", //HTTP POST Method
                                     url: "AuthenticationApi/Logout"/*"Authentication/logout"*/, // Controller/View
                                        //beforeSend: function (xhr) { xhr.setRequestHeader('Authorization', 'Bearer' + Cookies.get('neeoSocialToken')); },
-                                     
+
                                     success: function (res) {
                                         alert("ok")
                                        },

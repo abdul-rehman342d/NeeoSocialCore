@@ -17,6 +17,5 @@ namespace NewSocial.Models
         public DateTime commentTime { get; set; }
         public Post post { get; set; }
         public ICollection<SubReaction> SubReactions { get; set; }
-        public ICollection<SubComment> SubComments { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DAL.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
@@ -16,7 +17,9 @@ namespace NewSocial.Models
         public DateTime updateTime { get; set; }
 
 
+        public ICollection<SharePost> SharePosts { get; set; }
         public ICollection<Comment> Comments { get; set; }
         public ICollection<Reaction> Reactions { get; set; }
+        public ICollection<PostImage> PostImages { get; set; }
     }
 }

@@ -25,28 +25,29 @@ namespace NeeoSocial.APIControllers
         {
             string Message;
             int code;
-            //if (Session["ApplicationUser"] != null)
-            //{
-               // var User = (Models.User)Session["ApplicationUser"];
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+
+            if (isUserExist != null)
+            {
                 code = 200;
                 Message = "Saved";
                 UserMedia currentUerMedia = new UserMedia();
-                currentUerMedia.UserID = 1/* User.UserID*/;
+                currentUerMedia.UserID = UserID;
                 db.UserMedia.Add(currentUerMedia);
                 db.SaveChanges();
-            return Ok(Message);
-                //return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
-           // }
-            //else
-            //{
-            //    code = 401;
-            //    Message = "Login First";
-            //    return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
-            //}
+                return Ok(new { code, Message });
+            }
+            else
+            {
+                code = 401;
+                Message = "Login First";
+                return BadRequest(new { code, Message });
+            }
 
 
         }
-        public byte[] convertIntoByte(string byte_array)
+        private byte[] convertIntoByte(string byte_array)
         {
             byte[] bytes;
             if (byte_array != "")
@@ -61,7 +62,7 @@ namespace NeeoSocial.APIControllers
             }
             return bytes;
         }
-        public string convertByteIntostring(byte[] currentImage)
+        private string convertByteIntostring(byte[] currentImage)
         {
             string image;
             if (currentImage == null)
@@ -75,87 +76,71 @@ namespace NeeoSocial.APIControllers
 
             return image;
         }
-
-        public IActionResult addPost(string text, string image, string video)
+        public IActionResult addPost(string text, string image, List<string> images, string video)
         {
             string Message;
             int code;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
 
-            HttpContext.Request.Headers.TryGetValue("Authorization", out var UserID);
-            var userid = Request.GetHeader("UserID");
-            //if (Session["ApplicationUser"] != null)
-            if (userid != null)
+            if (isUserExist != null)
             {
-            if ((text != "" || image != "" || video != "") && text.Length <= 500)
+                if ((text != "" || images.Count != 0 || video != "") && text.Length <= 500)
                 {
-                // var User = (Models.User)Session["ApplicationUser"];
-        
-
-                Post currentPost = new Post();
-                    if (image != "" && image.Length >= 50)
-                    {
-                        byte[] contents = convertIntoByte(image);
-                        string subpath = "~/images/userPosts/";
-                        string fileName = long.Parse(userid) /*User.UserID*/ + "_Post_" + Guid.NewGuid() + ".jpg";
-                        var uploadPath = "adsds"/* HttpContext.Server.MapPath(subpath)*/;
-                        var path = Path.Combine(uploadPath, Path.GetFileName(fileName));
-                        System.IO.File.WriteAllBytes(path, contents);
-
-                        currentPost.imageURL = "/images/userPosts/" + fileName;
-                    }
-                    currentPost.UserID = long.Parse(userid) /*User.UserID*/;
+                    Post currentPost = new Post();
+                    
+                    currentPost.UserID = UserID;
                     currentPost.text = text;
                     currentPost.postTime = DateTime.UtcNow;
                     currentPost.updateTime = DateTime.UtcNow;
                     db.Post.Add(currentPost);
                     db.SaveChanges();
+                    PostImage currentImage = new PostImage();
+                    if (images != null)
+                    {
+                        for (int i = 0; i < images.Count; i++)
+                        {
+                            currentImage.PostID = currentPost.PostID;
+                            currentImage.imagePath = images[i];
+                            db.PostImage.Add(currentImage);
+                            db.SaveChanges();
+                        }
+                    }
                     code = 200;
                     Message = "Post Successfully added";
-                return Ok(Message);
-                    //return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
+                    return Ok(new { code, Message });
                 }
                 else
                 {
                     code = 400;
                     Message = "UnAuthorized Changing";
-                return BadRequest(Message);
-                    //return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
+                    return BadRequest(new { code, Message });
                 }
             }
             else
             {
                 code = 401;
                 Message = "Login First";
-                return BadRequest(Message);
+                return BadRequest(new { code, Message });
             }
 
 
         }
-
-        #region POSTLIST ........ LEFT
-
         public IActionResult postList()
         {
             string Message;
             int code;
-            HttpContext.Request.Headers.TryGetValue("Authorization", out var UserID);
-           var userid = Request.GetHeader("UserID");
-            //if (Session["ApplicationUser"] != null)
-                if (userid != null)
-                {
-                //var serializer = new JavaScriptSerializer();
-                //serializer.MaxJsonLength = Int32.MaxValue;
-                //var User = (Models.User)Session["ApplicationUser"];
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
 
-
-
-
-                var friendlist1 = (from f in db.Friend.Where(u => u.UserID1 == long.Parse(userid)/* User.UserID*/).ToList()
+            if (isUserExist != null)
+            {
+                var friendlist1 = (from f in db.Friend.Where(u => u.UserID1 == UserID).ToList()
                                    select new
                                    {
                                        f.UserID2,
                                    }).ToList();
-                var friendlist2 = (from f in db.Friend.Where(u => u.UserID2 == long.Parse(userid) /* User.UserID*/).ToList()
+                var friendlist2 = (from f in db.Friend.Where(u => u.UserID2 == UserID).ToList()
                                    select new
                                    {
                                        f.UserID1,
@@ -169,9 +154,9 @@ namespace NeeoSocial.APIControllers
                 {
                     friendIds.Add(friendlist2[i].UserID1);
                 }
-                friendIds.Add(long.Parse(userid) /*User.UserID*/);
+                friendIds.Add(UserID);
                 var postList = (from ep in friendIds
-                                join i in db.Post.Include("Comments").Include("Reactions").ToList()
+                                join i in db.Post.Include("Comments").Include("Reactions").Include("PostImages").ToList()
                                  on ep equals i.UserID
                                 select new
                                 {
@@ -190,7 +175,12 @@ namespace NeeoSocial.APIControllers
                                                 }).FirstOrDefault(),
                                     i.text,
                                     imageURl = "../../" + i.imageURL,
-                                    i.video,
+                                    images = (from img in i.PostImages.Where(u => u.PostID == i.PostID).ToList()
+                                              select new
+                                              {
+                                                  path = "../.." + img.imagePath
+                                              }).ToList(),
+                                    //i.video,
                                     postTime = TimeZone.CurrentTimeZone.ToLocalTime(i.postTime),
                                     agreeCount = i.Reactions.Where(u => u.reactionType == 1).ToList().Count(),
                                     agree = (from j in i.Reactions.Where(u => u.reactionType == 1).ToList()
@@ -235,44 +225,33 @@ namespace NeeoSocial.APIControllers
                                                     j.CommentID,
                                                     j.commentText,
                                                     commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt"),
-
-
                                                     subAgreeCount = db.SubReaction.Where(u => u.reactionType == 1 && u.CommentID == j.CommentID).ToList().Count(),
                                                     subDisAgreeCount = db.SubReaction.Where(u => u.reactionType == 0 && u.CommentID == j.CommentID).ToList().Count(),
                                                 }).ToList(),
                                 }).ToList().OrderByDescending(u => u.postTime).Take(30);
                 code = 200;
                 Message = "Post List Available";
-                return Ok(postList);
-                //return  Json(new { code, Message, postList }, JsonRequestBehavior.AllowGet);
+                return Ok(new { code, Message, postList });
 
             }
             else
             {
                 code = 401;
                 Message = "Login First";
-                return BadRequest(Message);
-                //return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
+                return BadRequest(new { code, Message });
 
             }
         }
-        #endregion
-
-        #region postListofCurrentUser LEFT
         public IActionResult postListofCurrentUser()
         {
             string Message;
             int code;
-            HttpContext.Request.Headers.TryGetValue("Authorization", out var UserID);
-            var userid = Request.GetHeader("UserID");
-            //if (Session["ApplicationUser"] != null)
-            if (userid  != null)
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
 
-                {
-
-
-             //   var User = (Models.User)Session["ApplicationUser"];
-                var postList = (from i in db.Post.Include("Comments").Include("Reactions").Where(u => u.UserID == long.Parse(userid) /*User.UserID*/).ToList()
+            if (isUserExist != null)
+            {
+                var postList = (from i in db.Post.Include("Comments").Include("Reactions").Where(u => u.UserID == UserID).ToList()
                                 select new
                                 {
                                     i.PostID,
@@ -319,34 +298,24 @@ namespace NeeoSocial.APIControllers
                                 }).ToList().OrderByDescending(u => u.PostID).Take(30);
                 code = 200;
                 Message = "Post List Available";
-                return Ok(Message);
-                //return Json(new { code, Message, postList }, JsonRequestBehavior.AllowGet);
+                return Ok(new { code, Message, postList });
             }
             else
             {
                 code = 401;
                 Message = "Login First";
-                return BadRequest(Message);
-               // return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
+                return BadRequest(new { code, Message });
 
             }
         }
-        #endregion
-
-        #region postListofSelectedUser ...LEFT
-
         public IActionResult postListofSelectedUser(Int64 FriendID)
         {
             string Message;
             int code;
-            HttpContext.Request.Headers.TryGetValue("Authorization", out var UserID);
-            var userid = Request.GetHeader("UserID");
-           // if (Session["ApplicationUser"] != null)
-           if(userid != null)
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+            if (isUserExist != null)
             {
-                // if (Session["ViewdUser"] != null)
-                if (userid != null)
-                {
                     var postList = (from i in db.Post.Include("Comments").Include("Reactions").Where(u => u.UserID == FriendID).ToList()
                                     select new
                                     {
@@ -389,100 +358,346 @@ namespace NeeoSocial.APIControllers
                                                                     ).FirstOrDefault(),
                                                         j.CommentID,
                                                         j.commentText,
-                                                        commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt"),
-                                                        sucomments = (from s in db.SubComment.Where(x => x.CommentID == j.CommentID)
-                                                                      select new
-                                                                      {
-                                                                          userProfile = (from sp in db.UserMedia.Where(u => u.UserID == s.UserID && u.type == 1).ToList()
-                                                                                         select new
-                                                                                         {
-                                                                                             sp.ImageUrl
-                                                                                         }).LastOrDefault(),
-
-                                                                          userName = (from sn in db.User.Where(x => x.UserID == s.UserID)
-                                                                                      select new
-                                                                                      {
-                                                                                          sn.name,
-                                                                                          sn.UserID
-                                                                                      }
-                                                                      ).FirstOrDefault(),
-                                                                      }
-                                                                    ).ToList(),
-
+                                                        commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt")
                                                     }).ToList(),
                                     }).ToList().OrderByDescending(u => u.PostID).Take(30);
                     code = 200;
                     Message = "Post List Available";
-                    return Ok(Message);
-                   // return Json(new { code, Message, postList }, JsonRequestBehavior.AllowGet);
+                    return Ok(new { code, Message, postList });
+                }
+            else
+            {
+                code = 401;
+                Message = "Login First";
+                return BadRequest(new { code, Message });
+
+            }
+        }
+        public IActionResult deletePost(int currentPostID)
+        {
+            string Message;
+            int code;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+            if (isUserExist != null)
+            {
+                var currentPost = db.Post.Where(u => u.PostID == currentPostID && (u.UserID == UserID || UserID == 1)).FirstOrDefault();
+                if (currentPost != null)
+                {
+                    var comments = db.Comment.Where(u => u.PostID == currentPost.PostID).ToList();
+                    var reactions = db.Reaction.Where(u => u.PostID == currentPost.PostID).ToList();
+                    var sharePosts = db.SharePost.Where(u => u.PostID == currentPost.PostID).ToList();
+
+                    foreach (var comment in comments)
+                    {
+                        db.Comment.Remove(comment);
+                    }
+                    foreach (var reaction in reactions)
+                    {
+                        db.Reaction.Remove(reaction);
+                    }
+                    foreach (var sharePost in sharePosts)
+                    {
+                        db.SharePost.Remove(sharePost);
+                    }
+                    db.Post.Remove(currentPost);
+                    db.SaveChanges();
+                    code = 200;
+                    Message = "Post Deleted";
+                    return Ok(new { code, Message });
                 }
                 else
                 {
                     code = 400;
-                    Message = "Try Again";
-                    return BadRequest(Message);
-                   // return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
-
+                    Message = "UnAuthorized Changing";
+                    return BadRequest(new { code, Message });
                 }
-
-
             }
             else
             {
                 code = 401;
                 Message = "Login First";
-                return BadRequest(Message);
+                return BadRequest(new { code, Message });
+            }
+
+
+        }
+        public IActionResult sharePost(string text, long PostID)
+        {
+
+            string Message;
+            int code;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+            if (isUserExist != null)
+            {
+                var isPostExist = db.Post.Where(u => u.PostID == PostID).FirstOrDefault();
+                if (isPostExist != null)
+                {
+                    SharePost currentSharePost = new SharePost();
+                    currentSharePost.PostID = PostID;
+                    currentSharePost.UserID = UserID;
+                    currentSharePost.text = text;
+                    currentSharePost.shareTime = DateTime.UtcNow;
+                    currentSharePost.updateTime = DateTime.UtcNow;
+                    db.SharePost.Add(currentSharePost);
+                    db.SaveChanges();
+                    code = 200;
+                    Message = "Post Successfully shared";
+                    return Ok(new { code, Message });
+                }
+                else
+                {
+                    code = 400;
+                    Message = "UnAuthorized Changing";
+                    return BadRequest(new { code, Message });
+                }
+            }
+            else
+            {
+                code = 401;
+                Message = "Login First";
+                return BadRequest(new { code, Message });
+            }
+        }
+        public IActionResult sharePostList()
+        {
+            string Message;
+            int code;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+
+            if (isUserExist != null)
+            {
+                var friendlist1 = (from f in db.Friend.Where(u => u.UserID1 ==UserID).ToList()
+                                   select new
+                                   {
+                                       f.UserID2,
+                                   }).ToList();
+                var friendlist2 = (from f in db.Friend.Where(u => u.UserID2 == UserID).ToList()
+                                   select new
+                                   {
+                                       f.UserID1,
+                                   }).ToList();
+                List<long> friendIds = new List<long>();
+                for (int i = 0; i < friendlist1.Count; i++)
+                {
+                    friendIds.Add(friendlist1[i].UserID2);
+                }
+                for (int i = 0; i < friendlist2.Count; i++)
+                {
+                    friendIds.Add(friendlist2[i].UserID1);
+                }
+                friendIds.Add(UserID);
+
+
+
+                //var result = (from ep in friendIds
+                //              join sp in db.SharePost.ToList()
+                //               on ep equals sp.UserID
+                //              select new
+                //              {
+                //                  sp.PostID,
+                //                  sp.UserID
+
+                //              }).ToList();
+
+
+                var sharedPostList = (from ep in friendIds
+                                      join sp in db.SharePost.ToList()
+                                      on ep equals sp.UserID
+                                      join i in db.Post.Include("Comments").Include("Reactions").Include("PostImages").ToList()
+                                       on sp.PostID equals i.PostID
+                                      select new
+                                      {
+                                          i.PostID,
+                                          i.UserID,
+
+
+                                          sharedUserProfile = (from k in db.UserMedia.Where(u => u.UserID == sp.UserID && u.type == 1).ToList()
+                                                               select new
+                                                               {
+                                                                   k.ImageUrl
+                                                               }).LastOrDefault(),
+                                          sharedUserName = (from j in db.User.Where(u => u.UserID == sp.UserID).ToList()
+                                                            select new
+                                                            {
+                                                                j.name
+                                                            }).FirstOrDefault(),
+
+
+
+                                          userProfile = (from k in db.UserMedia.Where(u => u.UserID == i.UserID && u.type == 1).ToList()
+                                                         select new
+                                                         {
+                                                             k.ImageUrl
+                                                         }).LastOrDefault(),
+                                          userName = (from j in db.User.Where(u => u.UserID == i.UserID).ToList()
+                                                      select new
+                                                      {
+                                                          j.name
+                                                      }).FirstOrDefault(),
+                                          i.text,
+                                          imageURl = "../../" + i.imageURL,
+                                          images = (from img in i.PostImages.Where(u => u.PostID == i.PostID).ToList()
+                                                    select new
+                                                    {
+                                                        path = "../.." + img.imagePath
+                                                    }).ToList(),
+                                          //i.video,
+                                          postTime = TimeZone.CurrentTimeZone.ToLocalTime(sp.shareTime),
+                                          agreeCount = i.Reactions.Where(u => u.reactionType == 1).ToList().Count(),
+                                          agree = (from j in i.Reactions.Where(u => u.reactionType == 1).ToList()
+                                                   select new
+                                                   {
+                                                       userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                                   select new
+                                                                   {
+                                                                       x.name,
+                                                                       x.UserID
+                                                                   }
+                                                                   ).FirstOrDefault(),
+                                                   }).ToList(),
+                                          disagreeCount = i.Reactions.Where(u => u.reactionType == 0).ToList().Count(),
+                                          disAgree = (from j in i.Reactions.Where(u => u.reactionType == 0).ToList()
+                                                      select new
+                                                      {
+                                                          userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                                      select new
+                                                                      {
+                                                                          x.name,
+                                                                          x.UserID
+                                                                      }
+                                                                      ).FirstOrDefault(),
+                                                      }).ToList(),
+                                          Comments = (from j in i.Comments
+                                                      select new
+                                                      {
+                                                          userProfile = (from k in db.UserMedia.Where(u => u.UserID == j.UserID && u.type == 1).ToList()
+                                                                         select new
+                                                                         {
+                                                                             k.ImageUrl
+                                                                         }).LastOrDefault(),
+
+                                                          userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                                      select new
+                                                                      {
+                                                                          x.name,
+                                                                          x.UserID
+                                                                      }
+                                                                      ).FirstOrDefault(),
+                                                          j.CommentID,
+                                                          j.commentText,
+                                                          commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt"),
+                                                          subAgreeCount = db.SubReaction.Where(u => u.reactionType == 1 && u.CommentID == j.CommentID).ToList().Count(),
+                                                          subDisAgreeCount = db.SubReaction.Where(u => u.reactionType == 0 && u.CommentID == j.CommentID).ToList().Count(),
+                                                      }).ToList(),
+                                      }).ToList().OrderByDescending(u => u.postTime).Take(30);
+
+                var postList = (from ep in friendIds
+                                join i in db.Post.Include("Comments").Include("Reactions").Include("PostImages").ToList()
+                                 on ep equals i.UserID
+                                select new
+                                {
+                                    i.PostID,
+                                    i.UserID,
+
+                                    userProfile = (from k in db.UserMedia.Where(u => u.UserID == i.UserID && u.type == 1).ToList()
+                                                   select new
+                                                   {
+                                                       k.ImageUrl
+                                                   }).LastOrDefault(),
+                                    userName = (from j in db.User.Where(u => u.UserID == i.UserID).ToList()
+                                                select new
+                                                {
+                                                    j.name
+                                                }).FirstOrDefault(),
+                                    i.text,
+                                    imageURl = "../../" + i.imageURL,
+                                    images = (from img in i.PostImages.Where(u => u.PostID == i.PostID).ToList()
+                                              select new
+                                              {
+                                                  path = "../.." + img.imagePath
+                                              }).ToList(),
+                                    //i.video,
+                                    postTime = TimeZone.CurrentTimeZone.ToLocalTime(i.postTime),
+                                    agreeCount = i.Reactions.Where(u => u.reactionType == 1).ToList().Count(),
+                                    agree = (from j in i.Reactions.Where(u => u.reactionType == 1).ToList()
+                                             select new
+                                             {
+                                                 userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                             select new
+                                                             {
+                                                                 x.name,
+                                                                 x.UserID
+                                                             }
+                                                             ).FirstOrDefault(),
+                                             }).ToList(),
+                                    disagreeCount = i.Reactions.Where(u => u.reactionType == 0).ToList().Count(),
+                                    disAgree = (from j in i.Reactions.Where(u => u.reactionType == 0).ToList()
+                                                select new
+                                                {
+                                                    userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                                select new
+                                                                {
+                                                                    x.name,
+                                                                    x.UserID
+                                                                }
+                                                                ).FirstOrDefault(),
+                                                }).ToList(),
+                                    Comments = (from j in i.Comments
+                                                select new
+                                                {
+                                                    userProfile = (from k in db.UserMedia.Where(u => u.UserID == j.UserID && u.type == 1).ToList()
+                                                                   select new
+                                                                   {
+                                                                       k.ImageUrl
+                                                                   }).LastOrDefault(),
+
+                                                    userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                                select new
+                                                                {
+                                                                    x.name,
+                                                                    x.UserID
+                                                                }
+                                                                ).FirstOrDefault(),
+                                                    j.CommentID,
+                                                    j.commentText,
+                                                    commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt"),
+                                                    subAgreeCount = db.SubReaction.Where(u => u.reactionType == 1 && u.CommentID == j.CommentID).ToList().Count(),
+                                                    subDisAgreeCount = db.SubReaction.Where(u => u.reactionType == 0 && u.CommentID == j.CommentID).ToList().Count(),
+                                                }).ToList(),
+                                }).ToList().OrderByDescending(u => u.postTime).Take(30);
+
+                Dictionary<dynamic, DateTime> bothTimePosts = new Dictionary<dynamic, DateTime>();
+
+                for (int i = 0; i < postList.Count(); i++)
+                {
+
+                    bothTimePosts.Add(postList.ElementAt(i), postList.ElementAt(i).postTime);
+
+                }
+
+                for (int i = 0; i < sharedPostList.Count(); i++)
+                {
+
+                    bothTimePosts.Add(sharedPostList.ElementAt(i), postList.ElementAt(i).postTime);
+
+                }
+
+                //var final = tenmp.OrderBy(x => tenmp.Values);
+                var result = bothTimePosts.OrderByDescending(v => Convert.ToDateTime(v.Value)).Select(v => v.Key);
+                code = 200;
+                Message = "Post List Available";
+                return Ok(new { code, Message, result });
+            }
+            else
+            {
+                code = 401;
+                Message = "Login First";
+                return BadRequest(new { code, Message });
 
             }
         }
-
-        #endregion
-
-        #region deletePost
-        //public JsonResult deletePost(int currentPostID)
-        //{
-        //    string Message;
-        //    int code;
-        //    if (Session["ApplicationUser"] != null)
-        //    {
-        //        var User = (Models.User)Session["ApplicationUser"];
-        //        var currentPost = db.Post.Where(u => u.PostID == currentPostID && (u.UserID == User.UserID || User.UserID == 1)).FirstOrDefault();
-        //        if (currentPost != null)
-        //        {
-        //            var comments = db.Comment.Where(u => u.PostID == currentPost.PostID).ToList();
-        //            var reactions = db.Reaction.Where(u => u.PostID == currentPost.PostID).ToList();
-
-        //            foreach (var comment in comments)
-        //            {
-        //                db.Comment.Remove(comment);
-        //            }
-        //            foreach (var reaction in reactions)
-        //            {
-        //                db.Reaction.Remove(reaction);
-        //            }
-        //            db.Post.Remove(currentPost);
-        //            db.SaveChanges();
-        //            code = 200;
-        //            Message = "Post Deleted";
-        //            return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
-        //        }
-        //        else
-        //        {
-        //            code = 400;
-        //            Message = "UnAuthorized Changing";
-        //            return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
-        //        }
-        //    }
-        //    else
-        //    {
-        //        code = 401;
-        //        Message = "Login First";
-        //        return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
-        //    }
-
-
-        //}
-        #endregion
-
     }
 }

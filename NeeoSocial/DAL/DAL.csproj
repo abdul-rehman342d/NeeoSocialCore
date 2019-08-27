@@ -124,9 +124,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Migrations\20190806080129_NEW.cs" />
-    <Compile Include="Migrations\20190806080129_NEW.designer.cs">
-      <DependentUpon>20190806080129_NEW.cs</DependentUpon>
+    <Compile Include="Migrations\20190826150336_NeeoSocialCoreFirst.cs" />
+    <Compile Include="Migrations\20190826150336_NeeoSocialCoreFirst.designer.cs">
+      <DependentUpon>20190826150336_NeeoSocialCoreFirst.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\DbCallsModelSnapshot.cs" />
     <Compile Include="Models\Comment.cs" />
@@ -134,7 +134,9 @@
     <Compile Include="Models\Friend.cs" />
     <Compile Include="Models\FriendRequest.cs" />
     <Compile Include="Models\Post.cs" />
+    <Compile Include="Models\PostImage.cs" />
     <Compile Include="Models\Reaction.cs" />
+    <Compile Include="Models\SharePost.cs" />
     <Compile Include="Models\SubComment.cs" />
     <Compile Include="Models\SubReaction.cs" />
     <Compile Include="Models\User.cs" />

@@ -19,6 +19,46 @@ namespace DAL.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
+            modelBuilder.Entity("DAL.Models.PostImage", b =>
+                {
+                    b.Property<int>("PostImageID")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long>("PostID");
+
+                    b.Property<string>("imagePath");
+
+                    b.HasKey("PostImageID");
+
+                    b.HasIndex("PostID");
+
+                    b.ToTable("PostImage");
+                });
+
+            modelBuilder.Entity("DAL.Models.SharePost", b =>
+                {
+                    b.Property<long>("SharePostID")
+                        .ValueGeneratedOnAdd()
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+                    b.Property<long>("PostID");
+
+                    b.Property<long>("UserID");
+
+                    b.Property<DateTime>("shareTime");
+
+                    b.Property<string>("text");
+
+                    b.Property<DateTime>("updateTime");
+
+                    b.HasKey("SharePostID");
+
+                    b.HasIndex("PostID");
+
+                    b.ToTable("SharePost");
+                });
+
             modelBuilder.Entity("NewSocial.Models.Comment", b =>
                 {
                     b.Property<int>("CommentID")
@@ -114,27 +154,6 @@ namespace DAL.Migrations
                     b.ToTable("Reaction");
                 });
 
-            modelBuilder.Entity("NewSocial.Models.SubComment", b =>
-                {
-                    b.Property<int>("SubCommentID")
-                        .ValueGeneratedOnAdd()
-                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
-
-                    b.Property<int>("CommentID");
-
-                    b.Property<long>("UserID");
-
-                    b.Property<string>("commentText");
-
-                    b.Property<DateTime>("commentTime");
-
-                    b.HasKey("SubCommentID");
-
-                    b.HasIndex("CommentID");
-
-                    b.ToTable("SubComment");
-                });
-
             modelBuilder.Entity("NewSocial.Models.SubReaction", b =>
                 {
                     b.Property<int>("SubReactionID")
@@ -142,8 +161,6 @@ namespace DAL.Migrations
                         .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<int>("CommentID");
-
-                    b.Property<int?>("SubCommentID");
 
                     b.Property<long>("UserID");
 
@@ -154,8 +171,6 @@ namespace DAL.Migrations
                     b.HasKey("SubReactionID");
 
                     b.HasIndex("CommentID");
-
-                    b.HasIndex("SubCommentID");
 
                     b.ToTable("SubReaction");
                 });
@@ -204,6 +219,22 @@ namespace DAL.Migrations
                     b.ToTable("UserMedia");
                 });
 
+            modelBuilder.Entity("DAL.Models.PostImage", b =>
+                {
+                    b.HasOne("NewSocial.Models.Post", "post")
+                        .WithMany("PostImages")
+                        .HasForeignKey("PostID")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("DAL.Models.SharePost", b =>
+                {
+                    b.HasOne("NewSocial.Models.Post", "post")
+                        .WithMany("SharePosts")
+                        .HasForeignKey("PostID")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("NewSocial.Models.Comment", b =>
                 {
                     b.HasOne("NewSocial.Models.Post", "post")
@@ -220,24 +251,12 @@ namespace DAL.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("NewSocial.Models.SubComment", b =>
-                {
-                    b.HasOne("NewSocial.Models.Comment", "comment")
-                        .WithMany("SubComments")
-                        .HasForeignKey("CommentID")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("NewSocial.Models.SubReaction", b =>
                 {
                     b.HasOne("NewSocial.Models.Comment", "comment")
                         .WithMany("SubReactions")
                         .HasForeignKey("CommentID")
                         .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("NewSocial.Models.SubComment")
-                        .WithMany("SubReactions")
-                        .HasForeignKey("SubCommentID");
                 });
 #pragma warning restore 612, 618
         }

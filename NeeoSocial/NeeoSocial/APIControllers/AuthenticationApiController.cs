@@ -14,20 +14,11 @@ using Newtonsoft.Json;
 namespace NeeoSocial.APIControllers
 {
   
-    [Route("Authentication")]
+    [Route("AuthenticationApi")]
     [ApiController]
     public class AuthenticationApiController : ControllerBase
     {
-
-        
-
-        User user = new User();
-          DbCalls db = new DbCalls();
-
-        // GET: Authentication
-        //const string SessionName = "ApplicationUser"; 
-        //const string SessionAge = "_Age";
-
+        DbCalls db = new DbCalls();
         /// <summary>
         /// User Register 
         /// </summary>
@@ -35,12 +26,10 @@ namespace NeeoSocial.APIControllers
         /// <returns></returns>
         [Route("UserRegister")]
         [HttpPost]
-        // public IActionResult UserRegisteration([FromRoute]string name, string email, string password, string dateOfBirth, int gender, string city, string country)
         public IActionResult UserRegisteration([FromBody] User user)
         {
             
             string Message;
-            // int code;
             if (user.name != "" && user.email != "" && user.password != "" && !(user.password.Length <= 5) && user.dateOfBirth != null /*&& (gender != 1 || gender != 0)*/ && user.city != "" && (user.country != "" && user.country.Length >= 3))
             {
                 var emailExist = db.User.Where(u => u.email == user.email).FirstOrDefault();
@@ -51,57 +40,27 @@ namespace NeeoSocial.APIControllers
                     currentUser.email = user.email;
                     currentUser.password = user.password;
                     currentUser.gender = user.gender;
-                   
-                    //var split = dateOfBirth.Split('-');
-                    //string date = split[0];
-                    //string Month = split[1];
-                    //string years = split[2];
-                    //user.dateOfBirth = years + "-" + Month + "-" + date;
-                    currentUser.dateOfBirth = DateTime.Now; /*Convert.ToDateTime(dateOfBirth)*/;
+                    currentUser.dateOfBirth = user.dateOfBirth;
                     currentUser.city = user.city;
                     currentUser.country = user.country;
                     currentUser.isVerified = false;
-                 
-
                     db.User.Add(currentUser);
                     db.SaveChanges();
-
-                    var key = "my-key";
-
-                    var str = JsonConvert.SerializeObject(currentUser);
-                    HttpContext.Session.SetString(key, str);
-
-
-                    //var gh = HttpContext.Session.GetString(key);
-                    //var obj = JsonConvert.DeserializeObject(str);
                     Message = "User registered";
-                //  HttpContext.Session.SetString(user.name, "ApplicationUser");
-                //var  gh = HttpContext.Session.GetString("ApplicationUser");
-
-                   // HttpContext.Session[""];
-                   //  Session.Timeout = 525600;
-                    var result = new OkObjectResult(new { message = "200 OK", currentDate = DateTime.Now, Message });
-                    return result;
-                  
-                   
+                    return Ok(new { code = 200, message = Message,userID= currentUser.UserID});
                 }
                 else
                 {
                     Message = "Email Already Exist";
-                    var result = new BadRequestObjectResult(new { message = "400 Bad Request", currentDate = DateTime.Now , Message });
-                    return result;
-                    //return BadRequest(Message);
-                    
+                    return Ok(new { code = 400, message = Message });
                 }
             }
             else
             {
                 Message = "Unauthorized Changes";
-                var result = new NotFoundObjectResult(new { message = "404 Not Found", currentDate = DateTime.Now , Message});
-                return result;
-
-               // return BadRequest(Message);
-              
+               
+                return BadRequest(new { code = 400, message = Message });
+             
             }
         }
         /// <summary>
@@ -109,39 +68,23 @@ namespace NeeoSocial.APIControllers
         /// </summary>
         /// <param name="users"></param>
         /// <returns></returns>
-      [Route("Login")]
+        [Route("Login")]
         [HttpPost]
-        public IActionResult Login([FromBody] User users)
-
+        public IActionResult Login([FromBody] User user)
         {
             string Message;
-            //  int code;
             if (db.User.Any())
             {
-                 user = db.User.Where(u => u.email == users.email && u.password == users.password).FirstOrDefault();
-                if (user != null)
+                 var User = db.User.Where(u => u.email == user.email && u.password == user.password).FirstOrDefault();
+                if (User != null)
                 {
-                  
-                    Message = "successfully logged in";
-
-                    //Session["ApplicationUser"] = user;
-
-              
-                    HttpContext.Session.GetString(user.name);
-
-                    var key = "my-key";
-                    var str = JsonConvert.SerializeObject(user);
-                    HttpContext.Session.SetString(key, str);
-
-                    //Session.Timeout = 525600;
-                    return Ok(Message);
+                    Message = "logged in";
+                    return Ok(new { code = 200, message = Message, userID = User.UserID });
                 }
                 else
                 {
-                    // code = 400;
-                    Message = "Invalid username or password!";
-                    return BadRequest(Message);
-                    //return Json(new { code, Message }, JsonRequestBehavior.AllowGet);
+                    Message = "Invalid user";
+                    return Ok(new { code = 400, message = Message});
                 }
             }
             else
@@ -151,7 +94,6 @@ namespace NeeoSocial.APIControllers
                 return BadRequest(Message);
 
             }
-
         }
 
         //Logout
