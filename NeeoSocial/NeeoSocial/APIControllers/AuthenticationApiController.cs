@@ -70,21 +70,22 @@ namespace NeeoSocial.APIControllers
         /// <returns></returns>
         [Route("Login")]
         [HttpPost]
-        public IActionResult Login([FromBody] User user)
+        public IActionResult Login(User user)
         {
             string Message;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
             if (db.User.Any())
             {
                  var User = db.User.Where(u => u.email == user.email && u.password == user.password).FirstOrDefault();
                 if (User != null)
                 {
-                    Message = "logged in";
-                    return Ok(new { code = 200, message = Message, userID = User.UserID });
+                    Message = "successfully logged in";
+                    return Ok(new { code = "200", message = Message, userID = User.UserID });
                 }
                 else
                 {
-                    Message = "Invalid user";
-                    return Ok(new { code = 400, message = Message});
+                    Message = "Incorrect Email or Password";
+                    return Ok(new { code = "400", message = Message});
                 }
             }
             else

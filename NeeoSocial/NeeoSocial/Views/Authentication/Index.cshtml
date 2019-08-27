@@ -535,31 +535,61 @@
                             if (this.User.email == "") { toastr.error("Email Required", "Error!"); }
                             if (this.isEmailValid(this.User.email) == false && this.User.email != "") {toastr.error("Invalid Email", "Error!"); }
                             if (this.User.email != "" && this.isEmailValid(this.User.email) == true && this.User.password != "" && !(this.User.password.length <= 5)) {
-                                $.ajax(
-                                         {
-                                        type: "POST",
-                                        url: "/AuthenticationApi/Login",
-                                        contentType: "application/json",
-                                        dataType: "json",
-                                        data: JSON.stringify({
+                                //$.ajax(
+                                //         {
+                                //        type: "POST",
+                                //        url: "/AuthenticationApi/Login",
+                                //        contentType: "application/json",
+                                //        dataType: "json",
+                                //        data: JSON.stringify({
+                                //           "email": this.User.email,
+                                //           "password": this.User.password,
+                                //        }),
+                                //        success: function (res) {
+                                //            if (res.code == 200 && res.message == "logged in") {
+                                //                Cookies.set('NeeoSocialuserID', res.userID);
+                                //                toastr.success("Succefully Logged in", "Success!");
+                                //            }
+                                //            else if (res.code == 400 && res.message == "Invalid user") {
+                                //                toastr.error("Incorrect Email or Password", "Error!");
+                                //            }
+                                //        },
+                                //        error: function (data) {
+                                //            toastr.error("Something went worng,Please Try again", "Error!");
+
+                                //        }
+                                //    }
+                                //);
+
+                               
+                               axios({
+                                    method: 'POST',
+                                    url: '/AuthenticationApi/Login',
+                                    data:  JSON.stringify({
                                            "email": this.User.email,
                                            "password": this.User.password,
                                         }),
-                                        success: function (res) {
-                                            if (res.code == 200 && res.message == "logged in") {
-                                                Cookies.set('NeeoSocialuserID', res.userID);
-                                                toastr.success("Succefully Logged in", "Success!");
-                                            }
-                                            else if (res.code == 400 && res.message == "Invalid user") {
-                                                toastr.error("Incorrect Email or Password", "Error!");
-                                            }
-                                        },
-                                        error: function (data) {
-                                            toastr.error("Something went worng,Please Try again", "Error!");
-
+                                     headers: {
+                                         'Content-Type': 'application/json',
+                                         'UserID': '2',
                                         }
+                                    })
+                                   .then(function (res) {
+                                       alert(res.data["code"]);
+                                    if (res.data["code"] == 200 && res.data["Message"] == "successfully logged in") {
+                                        toastr.success("Succefully Logged in", "Success!");
+                                         Cookies.set('NeeoSocialuserID', res.userID);
+                                        //window.location = "/Dashboard/home";
                                     }
-                                );
+                                    if (res.data["code"] == 400 && res.data["Message"] == "Incorrect Email or Password") {
+                                        toastr.error("Incorrect Email or Password", "Error!");
+                                    }
+                                    if (res.data["code"] == 400 && res.data["Message"] == "No User Exist") { toastr.error("No User Exist", "Error!"); }
+                                   
+                                    })
+                                    .then(function (error) {
+                                        console.log(error);
+                                    })
                             }
                         },
                         logout()
