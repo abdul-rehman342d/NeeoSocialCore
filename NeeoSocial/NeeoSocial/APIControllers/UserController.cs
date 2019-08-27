@@ -45,7 +45,7 @@ namespace NeeoSocial.APIControllers
 
                 code = 200;
                 Message = "User Detail available";
-                return Ok(new { code, Message,currentUser, currentUserProfile, totalFollowers });
+                return Ok(new { code = code, Message= Message, currentUser=currentUser, currentUserProfile= currentUserProfile, totalFollowers=totalFollowers });
             }
             else
             {

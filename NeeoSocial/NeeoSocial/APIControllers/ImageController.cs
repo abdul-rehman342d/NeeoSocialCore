@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NeeoSocial.Utility;
 using NewSocial.Models;
+using static NeeoSocial.Utility.HeaderDTO;
 
 namespace NeeoSocial.APIControllers
 {
@@ -66,6 +67,93 @@ namespace NeeoSocial.APIControllers
             public string Path { get; set; }
         }
 
+
+
+
+        [Route("Post")]
+        [HttpPost]
+        public async Task<IActionResult> UploadFiles(List<IFormFile> files)
+        {
+            //List<IFormFile> files = new List<IFormFile>();
+            if (files == null || files.Count == 0)
+                return Content("files not selected");
+
+            foreach (var file in files)
+            {
+                var path = Path.Combine(
+                        Directory.GetCurrentDirectory(), "wwwroot/userPosts/",
+                        file.GetFilename());
+
+                using (var stream = new FileStream(path, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+            }
+
+            return Ok("ImageUpload");
+        }
+
+
+
+
+
+
+
+        public async Task<IActionResult> SaveProfile(FileInputModel model)
+        {
+            string Message;
+            int code;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+            if (isUserExist != null)
+            {
+                code = 200;
+                Message = "Saved";
+                string subpath = "~/images/userProfiles/";
+                string fileName = UserID + "_Profile_" + Guid.NewGuid() + ".jpg";
+
+                if (model.FileToUpload != null && model.FileToUpload.Count > 0)
+                {
+
+                    foreach (IFormFile file in model.FileToUpload)
+                    {
+                       
+
+                        var path = Path.Combine(
+                                Directory.GetCurrentDirectory(), "wwwroot/images/userProfiles/",
+                                fileName);
+
+                        using (var stream = new FileStream(path, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+
+                        UserMedia currentUerMedia = new UserMedia();
+                        currentUerMedia.UserID = UserID;
+                        currentUerMedia.type = 1;
+                        currentUerMedia.ImageUrl = "wwwroot/images/userProfiles/" + fileName;
+                        db.UserMedia.Add(currentUerMedia);
+                        db.SaveChanges();
+
+                    }
+
+                }
+
+             
+
+
+                return Ok(new { code, Message });
+            }
+            else
+            {
+                code = 401;
+                Message = "Login First";
+                return Ok(new { code, Message });
+            }
+
+        }
+
         //[HttpPost]
         //public IActionResult UploadImages()
         //{
@@ -74,7 +162,7 @@ namespace NeeoSocial.APIControllers
 
         //    try
         //    {
-                
+
         //        var httpContext = System.Web.HttpContext.Current;
         //        List<string> images = new List<string>();
         //        // Check for any uploaded file  
@@ -118,8 +206,6 @@ namespace NeeoSocial.APIControllers
 
         //    }
         //}
-
-
         private byte[] convertIntoByte(string byte_array)
         {
             byte[] bytes = System.Convert.FromBase64String((byte_array.Split(',') as string[])[1]);
