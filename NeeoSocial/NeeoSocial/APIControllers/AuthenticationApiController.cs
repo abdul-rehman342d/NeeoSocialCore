@@ -52,14 +52,14 @@ namespace NeeoSocial.APIControllers
                 else
                 {
                     Message = "Email Already Exist";
-                    return Ok(new { code = 400, message = Message });
+                    return Ok(new { code = 400, Message = Message });
                 }
             }
             else
             {
                 Message = "Unauthorized Changes";
                
-                return BadRequest(new { code = 400, message = Message });
+                return BadRequest(new { code = 400, Message = Message });
              
             }
         }
@@ -73,14 +73,13 @@ namespace NeeoSocial.APIControllers
         public IActionResult Login(User user)
         {
             string Message;
-            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
             if (db.User.Any())
             {
                  var User = db.User.Where(u => u.email == user.email && u.password == user.password).FirstOrDefault();
                 if (User != null)
                 {
                     Message = "successfully logged in";
-                    return Ok(new { code = "200", message = Message, userID = User.UserID });
+                    return Ok(new { code = "200", Message = Message, userID = User.UserID });
                 }
                 else
                 {

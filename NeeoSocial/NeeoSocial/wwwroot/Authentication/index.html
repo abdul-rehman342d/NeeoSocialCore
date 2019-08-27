@@ -13,12 +13,12 @@
     <!-- Stylesheets
     ================================================= -->
 
-    <link rel="stylesheet" href="~/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/style.css" />
-    <link rel="stylesheet" href="~/css/ionicons.min.css" />
-    <link rel="stylesheet" href="~/css/font-awesome.min.css" />
-    <link rel="stylesheet" href="~/css/toastr.css" />
-    <link rel="stylesheet" href="~/css/DateTimePicker.css" />
+    <link rel="stylesheet" href="../css/bootstrap.min.css" />
+    <link rel="stylesheet" href="../css/style.css" />
+    <link rel="stylesheet" href="../css/ionicons.min.css" />
+    <link rel="stylesheet" href="../css/font-awesome.min.css" />
+    <link rel="stylesheet" href="../css/toastr.css" />
+    <link rel="stylesheet" href="../css/DateTimePicker.css" />
 
     <!--Google Font-->
     <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700,700i" rel="stylesheet">
@@ -38,7 +38,7 @@
                 <div class="col-sm-5">
                     <div class="intro-texts">
                         <h1 class="text-white">
-                            <img src="~/images/Neeo-Social-Index-logo.png" style="width:80%" />
+                            <img src="../images/Neeo-Social-Index-logo.png" style="width:80%" />
                         </h1>
                         <p style="padding:10px">Neeo Social is a social network platform that can be used to connect people. Billions of people around the world use Neeo Social to share information and make connections.<br /> <br />What are you waiting for? &nbsp; <a href="#register" data-toggle="tab" style="color:white">Sign Up now.</a></p>
                     </div>
@@ -73,7 +73,7 @@
                                         </div>
                                     </div>
                                 </form><!--Login Form Ends-->
-                                @*<p><a>Forgot Password?</a>&nbsp;&nbsp;&nbsp;<a data-toggle="tab" data-target="#register">New Account?</a></p>*@
+                               
                                 <button type="submit" class="btn btn-primary" v-on:click="login()">Login Now</button>
                                 <button type="submit" class="btn btn-primary" v-on:click="logout()">logout Now</button>
                             </div>
@@ -377,7 +377,7 @@
                                         </div>
                                     </div>
                                 </form><!--Register Now Form Ends-->
-                                @*<p><a data-toggle="tab" data-target="#login">Already have account?</a></p>*@
+                              
                                 <button type="submit" class="btn btn-primary" v-on:click=" UserRegisteration()">Register Now</button>
                             </div><!--Registration Form Contents Ends-->
                             <!--Login-->
@@ -409,18 +409,18 @@
     <!-- Scripts
     ================================================= -->
 
-    <script src="~/js/jquery-3.1.1.min.js"></script>
-    <script src="~/js/bootstrap.min.js"></script>
-    <script src="~/js/jquery.appear.min.js"></script>
-    <script src="~/js/jquery.incremental-counter.js"></script>
-    <script src="~/js/DateTimePicker.min.js"></script>
-    <script src="~/js/script.js"></script>
-    <script src="~/js/cookies.js"></script>
-    <script src="~/js/jquery.blockUI.js"></script>
-    <script src="~/js/moment.js"></script>
-    <script src="~/js/vue.js"></script>
-    <script src="~/js/axios.js"></script>
-    <script src="~/js/toastr.min.js"></script>
+    <script src="../js/jquery-3.1.1.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+    <script src="../js/jquery.appear.min.js"></script>
+    <script src="../js/jquery.incremental-counter.js"></script>
+    <script src="../js/DateTimePicker.min.js"></script>
+    <script src="../js/script.js"></script>
+    <script src="../js/cookies.js"></script>
+    <script src="../js/jquery.blockUI.js"></script>
+    <script src="../js/moment.js"></script>
+    <script src="../js/vue.js"></script>
+    <script src="../js/axios.js"></script>
+    <script src="../js/toastr.min.js"></script>
     <script type="text/javascript">
             function a(event) {
                 var char = event.which;
@@ -459,7 +459,7 @@
                     methods:
                     {
                         isEmailValid(email) {
-                                    var reg = /^[_a-z0-9-]+(\.[_a-z0-9-]+)*@@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/;
+                                    var reg = /^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$/;
                                     if (reg.test(email)) {
                                         return true;
                                     }
@@ -486,44 +486,40 @@
                                 var UserRegDate = this.UserReg.dateOfBirth.split('-');
                                 UserRegDate = moment.utc(UserRegDate[2] + "-" + UserRegDate[1] + "-" + UserRegDate[0]);
                                   var vm = this;
-                                  $.ajax(
-                                      {
-                                          type: "POST",
-                                          url: "/AuthenticationApi/UserRegister",
-                                          contentType: "application/json",
-                                          dataType: "json",
-                                          data: JSON.stringify({
-                                              "name": this.UserReg.name,
-                                              "email": this.UserReg.email,
-                                              "password": this.UserReg.password,
-                                              "dateOfBirth": UserRegDate,
-                                              "gender": this.UserReg.gender,
-                                              "city": this.UserReg.city,
-                                              "country": this.UserReg.country
-                                          }),
-                                          success: function (res) {
-                                              if (res.code == 200 && res.message == "User registered") {
-                                                  toastr.success("Succefully Registered in", "Success!");
-                                                  Cookies.set('NeeoSocialuserID', res.userID);
-                                                  //window.location = "/Dashboard/home";
-                                              }
-                                              if (res.code == 400 && res.message == "Email already exist") {
-                                                  toastr.error("Email Already Exist", "Error!");
-                                              }
-                                              if (res.code == 400 && res.message == "Unauthorized Changes") {
-                                                  toastr.error("Unauthorized Changes", "Error!");
-                                              }
-                                               if (res.code == 500 && res.message == "Server Error") {
-                                                  toastr.error("Something went worng, Please Try again", "Error!", "Error!");
-                                              }
+                                axios({
+                                    method: 'POST',
+                                    url: '/AuthenticationApi/UserRegister',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    data:  JSON.stringify({
+                                    "name": this.UserReg.name,
+                                    "email": this.UserReg.email,
+                                    "password": this.UserReg.password,
+                                    "dateOfBirth": UserRegDate,
+                                    "gender": this.UserReg.gender,
+                                    "city": this.UserReg.city,
+                                    "country": this.UserReg.country
+                                           })
+                            })
+                                .then(function (res) {
+                                    if (res.data["code"] == 200 && res.data["Message"] == "User registered") {
+                                        toastr.success("Please Wait", "Success!");
+                                        toastr.success("Successfully Registered", "Success!");
+                                        //window.location = "/Dashboard/home";
 
-                                          },
-                                          error: function (data) {
-                                              toastr.error("Something went worng, Please Try again", "Error!");
+                                    }
+                                    if (res.data["code"] == 101 && res.data["Message"] == "Email Already Exist") {
 
-                                          }
-                                      }
-                                  );
+                                        toastr.error("Email Already Exist", "Error!");
+                                    }
+                                    if (res.data["code"] == 500 && res.data["Message"] == "Unauthorized Changes") {
+
+                                        toastr.error("Unauthorized Changes");
+                                    }
+                                    endReq();
+                                })
+                                .then(function (error) {
+                                    console.log(error);
+                                })
                             }
                         },
                         login() {
@@ -542,17 +538,17 @@
                                         }),
                                      headers: {
                                          'Content-Type': 'application/json',
-                                         'UserID': '2',
                                         }
                                     })
                                    .then(function (res) {
-                                       alert(res.data["code"]);
+                                      
                                     if (res.data["code"] == 200 && res.data["Message"] == "successfully logged in") {
-                                        toastr.success("Succefully Logged in", "Success!");
+                                      
+                                         toastr.success("Succefully Logged in", "Success!");
                                          Cookies.set('NeeoSocialuserID', res.userID);
                                         //window.location = "/Dashboard/home";
                                     }
-                                    if (res.data["code"] == 400 && res.data["Message"] == "Incorrect Email or Password") {
+                                       if (res.data["code"] == 400 && res.data["Message"] == "Incorrect Email or Password") {
                                         toastr.error("Incorrect Email or Password", "Error!");
                                     }
                                     if (res.data["code"] == 400 && res.data["Message"] == "No User Exist") { toastr.error("No User Exist", "Error!"); }
