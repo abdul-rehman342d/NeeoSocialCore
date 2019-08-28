@@ -27,6 +27,7 @@
 
 
   <ItemGroup>
+    <Folder Include="wwwroot\images\userPosts\" />
     <Folder Include="wwwroot\images\userProfiles\" />
   </ItemGroup>
 

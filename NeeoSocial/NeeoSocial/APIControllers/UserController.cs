@@ -15,6 +15,7 @@ namespace NeeoSocial.APIControllers
     {
         DbCalls db = new DbCalls();
         long ViewdUser;
+        [HttpGet]
         [Route("UserDeatile")]
         public IActionResult UserDeatile()
         {

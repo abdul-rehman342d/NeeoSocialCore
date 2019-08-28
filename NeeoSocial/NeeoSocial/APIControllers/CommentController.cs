@@ -10,15 +10,16 @@ using NewSocial.Models;
 
 namespace NeeoSocial.APIControllers
 {
-    [Route("api/[controller]")]
+    [Route("CommentApi")]
     [ApiController]
     public class CommentController : ControllerBase
     {
 
         DbCalls db = new DbCalls();
-        [Route("AddComment")]
         [HttpPost]
-        public IActionResult addComment(int PostID, string commentText)
+        [Route("addComment")]
+        
+        public IActionResult addComment(Comment currentComment)
         {
             string Message;
             int code;
@@ -27,19 +28,29 @@ namespace NeeoSocial.APIControllers
 
             if (isUserExist != null)
             {
-                if (commentText.Length <= 200)
+                if (currentComment.commentText.Length <= 200)
                 {
+                    var isPostExist = db.Post.Where(u => u.PostID == currentComment.PostID).FirstOrDefault();
+                    if (isPostExist != null)
+                    {
+                        currentComment.PostID = Convert.ToInt64(currentComment.PostID);
+                        currentComment.UserID = UserID;
+                        currentComment.commentText = currentComment.commentText;
+                        currentComment.commentTime = DateTime.Now;
+                        db.Comment.Add(currentComment);
+                        db.SaveChanges();
+                        code = 200;
+                        Message = "comment Successfully added";
+                        return Ok(new { code, Message });
+                    }
+                    else
+                    {
+                        code = 400;
+                        Message = "Post Not exist";
+                        return BadRequest(new { code, Message });
+                    }
+
                   
-                    Comment currentComment = new Comment();
-                    currentComment.PostID = Convert.ToInt64(PostID);
-                    currentComment.UserID =UserID;
-                    currentComment.commentText = commentText;
-                    currentComment.commentTime = DateTime.Now;
-                    db.Comment.Add(currentComment);
-                    db.SaveChanges();
-                    code = 200;
-                    Message = "comment Successfully added";
-                    return Ok(new { code, Message });
                 }
                 else
                 {

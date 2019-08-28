@@ -52,7 +52,7 @@ namespace NeeoSocial.APIControllers
                 else
                 {
                     Message = "Email Already Exist";
-                    return Ok(new { code = 400, Message = Message });
+                    return Ok(new { code = 101, message = Message });
                 }
             }
             else
@@ -84,7 +84,7 @@ namespace NeeoSocial.APIControllers
                 else
                 {
                     Message = "Incorrect Email or Password";
-                    return Ok(new { code = "400", message = Message});
+                    return Ok(new { code = "400", Message = Message});
                 }
             }
             else

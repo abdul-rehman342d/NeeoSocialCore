@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using DAL.Models;
 using Microsoft.AspNetCore.Http;
@@ -9,16 +10,15 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NeeoSocial.Utility;
 using NewSocial.Models;
+using Newtonsoft.Json;
 
 namespace NeeoSocial.APIControllers
 {
-
   
-    [Route("api/[controller]")]
+    [Route("PostApi")]
     [ApiController]
-    public class PostController : ControllerBase
+    public class PostApiController : ControllerBase
     {
-
 
         DbCalls db = new DbCalls();
         public IActionResult SaveProfile(string image)
@@ -76,7 +76,16 @@ namespace NeeoSocial.APIControllers
 
             return image;
         }
-        public IActionResult addPost(string text, string image, List<string> images, string video)
+
+        public class PostInParam
+        {
+            public string text;
+            public List<string> images;
+        }
+
+        [HttpPost]
+        [Route("addPost")]
+        public IActionResult addPost(PostInParam post)
         {
             string Message;
             int code;
@@ -85,23 +94,22 @@ namespace NeeoSocial.APIControllers
 
             if (isUserExist != null)
             {
-                if ((text != "" || images.Count != 0 || video != "") && text.Length <= 500)
+                if ((post.text != "" || post.images.Count != 0) && post.text.Length <= 500)
                 {
                     Post currentPost = new Post();
-                    
                     currentPost.UserID = UserID;
-                    currentPost.text = text;
+                    currentPost.text = post.text;
                     currentPost.postTime = DateTime.UtcNow;
                     currentPost.updateTime = DateTime.UtcNow;
                     db.Post.Add(currentPost);
                     db.SaveChanges();
                     PostImage currentImage = new PostImage();
-                    if (images != null)
+                    if (post.images != null)
                     {
-                        for (int i = 0; i < images.Count; i++)
+                        for (int i = 0; i < post.images.Count; i++)
                         {
                             currentImage.PostID = currentPost.PostID;
-                            currentImage.imagePath = images[i];
+                            currentImage.imagePath = post.images[i];
                             db.PostImage.Add(currentImage);
                             db.SaveChanges();
                         }
@@ -126,6 +134,60 @@ namespace NeeoSocial.APIControllers
 
 
         }
+
+
+        public class SharePostInParam
+        {
+            public long PostID;
+            public string text;
+            
+        }
+
+        [HttpPost]
+        [Route("sharePost")]
+        public IActionResult sharePost(SharePostInParam sharePost)
+        {
+
+            string Message;
+            int code;
+            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
+            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
+            if (isUserExist != null)
+            {
+                var isPostExist = db.Post.Where(u => u.PostID == sharePost.PostID).FirstOrDefault();
+                if (isPostExist != null)
+                {
+                    SharePost currentSharePost = new SharePost();
+                    currentSharePost.PostID = sharePost.PostID;
+                    currentSharePost.UserID = UserID;
+                    currentSharePost.text = sharePost.text;
+                    currentSharePost.shareTime = DateTime.UtcNow;
+                    currentSharePost.updateTime = DateTime.UtcNow;
+                    db.SharePost.Add(currentSharePost);
+                    db.SaveChanges();
+                    code = 200;
+                    Message = "Post Successfully shared";
+                    return Ok(new { code, Message });
+                }
+                else
+                {
+                    code = 400;
+                    Message = "UnAuthorized Changing";
+                    return BadRequest(new { code, Message });
+                }
+            }
+            else
+            {
+                code = 401;
+                Message = "Login First";
+                return BadRequest(new { code, Message });
+            }
+        }
+
+
+        [HttpGet]
+        [Route("postList")]
+        
         public IActionResult postList()
         {
             string Message;
@@ -181,7 +243,7 @@ namespace NeeoSocial.APIControllers
                                                   path = "../.." + img.imagePath
                                               }).ToList(),
                                     //i.video,
-                                    postTime = TimeZone.CurrentTimeZone.ToLocalTime(i.postTime),
+                                    postTime = i.postTime.ToString("MM/dd/yyyy hh:mm tt"),
                                     agreeCount = i.Reactions.Where(u => u.reactionType == 1).ToList().Count(),
                                     agree = (from j in i.Reactions.Where(u => u.reactionType == 1).ToList()
                                              select new
@@ -316,55 +378,55 @@ namespace NeeoSocial.APIControllers
             var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
             if (isUserExist != null)
             {
-                    var postList = (from i in db.Post.Include("Comments").Include("Reactions").Where(u => u.UserID == FriendID).ToList()
-                                    select new
-                                    {
-                                        i.PostID,
-                                        i.UserID,
+                var postList = (from i in db.Post.Include("Comments").Include("Reactions").Where(u => u.UserID == FriendID).ToList()
+                                select new
+                                {
+                                    i.PostID,
+                                    i.UserID,
 
-                                        userProfile = (from k in db.UserMedia.Where(u => u.UserID == i.UserID && u.type == 1).ToList()
-                                                       select new
-                                                       {
-                                                           k.ImageUrl
-                                                       }).LastOrDefault(),
-                                        userName = (from j in db.User.Where(u => u.UserID == i.UserID).ToList()
-                                                    select new
-                                                    {
-                                                        j.name
-                                                    }).FirstOrDefault(),
-                                        i.text,
-                                        imageURl = "../../" + i.imageURL,
-                                        //i.video,
-                                        postTime = TimeZone.CurrentTimeZone.ToLocalTime(i.postTime),
-                                        agreeCount = i.Reactions.Where(u => u.reactionType == 1).ToList().Count(),
-                                        //agree = i.Reactions.Where(u => u.reactionType == 1).ToList(),
-                                        disagreeCount = i.Reactions.Where(u => u.reactionType == 0).ToList().Count(),
-                                        //disAgree = i.Reactions.Where(u => u.reactionType == 0).ToList(),
-                                        Comments = (from j in i.Comments
-                                                    select new
-                                                    {
-                                                        userProfile = (from k in db.UserMedia.Where(u => u.UserID == j.UserID && u.type == 1).ToList()
-                                                                       select new
-                                                                       {
-                                                                           k.ImageUrl
-                                                                       }).LastOrDefault(),
+                                    userProfile = (from k in db.UserMedia.Where(u => u.UserID == i.UserID && u.type == 1).ToList()
+                                                   select new
+                                                   {
+                                                       k.ImageUrl
+                                                   }).LastOrDefault(),
+                                    userName = (from j in db.User.Where(u => u.UserID == i.UserID).ToList()
+                                                select new
+                                                {
+                                                    j.name
+                                                }).FirstOrDefault(),
+                                    i.text,
+                                    imageURl = "../../" + i.imageURL,
+                                    //i.video,
+                                    postTime = TimeZone.CurrentTimeZone.ToLocalTime(i.postTime),
+                                    agreeCount = i.Reactions.Where(u => u.reactionType == 1).ToList().Count(),
+                                    //agree = i.Reactions.Where(u => u.reactionType == 1).ToList(),
+                                    disagreeCount = i.Reactions.Where(u => u.reactionType == 0).ToList().Count(),
+                                    //disAgree = i.Reactions.Where(u => u.reactionType == 0).ToList(),
+                                    Comments = (from j in i.Comments
+                                                select new
+                                                {
+                                                    userProfile = (from k in db.UserMedia.Where(u => u.UserID == j.UserID && u.type == 1).ToList()
+                                                                   select new
+                                                                   {
+                                                                       k.ImageUrl
+                                                                   }).LastOrDefault(),
 
-                                                        userName = (from x in db.User.Where(x => x.UserID == j.UserID)
-                                                                    select new
-                                                                    {
-                                                                        x.name,
-                                                                        x.UserID
-                                                                    }
-                                                                    ).FirstOrDefault(),
-                                                        j.CommentID,
-                                                        j.commentText,
-                                                        commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt")
-                                                    }).ToList(),
-                                    }).ToList().OrderByDescending(u => u.PostID).Take(30);
-                    code = 200;
-                    Message = "Post List Available";
-                    return Ok(new { code, Message, postList });
-                }
+                                                    userName = (from x in db.User.Where(x => x.UserID == j.UserID)
+                                                                select new
+                                                                {
+                                                                    x.name,
+                                                                    x.UserID
+                                                                }
+                                                                ).FirstOrDefault(),
+                                                    j.CommentID,
+                                                    j.commentText,
+                                                    commentTime = j.commentTime.ToString("dd-MMM-yy hh:mm tt")
+                                                }).ToList(),
+                                }).ToList().OrderByDescending(u => u.PostID).Take(30);
+                code = 200;
+                Message = "Post List Available";
+                return Ok(new { code, Message, postList });
+            }
             else
             {
                 code = 401;
@@ -373,6 +435,9 @@ namespace NeeoSocial.APIControllers
 
             }
         }
+
+        [HttpDelete]
+        [Route("deletePost/{currentPostID}")]
         public IActionResult deletePost(int currentPostID)
         {
             string Message;
@@ -422,54 +487,19 @@ namespace NeeoSocial.APIControllers
 
 
         }
-        public IActionResult sharePost(string text, long PostID)
-        {
+       
 
-            string Message;
-            int code;
-            long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
-            var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
-            if (isUserExist != null)
-            {
-                var isPostExist = db.Post.Where(u => u.PostID == PostID).FirstOrDefault();
-                if (isPostExist != null)
-                {
-                    SharePost currentSharePost = new SharePost();
-                    currentSharePost.PostID = PostID;
-                    currentSharePost.UserID = UserID;
-                    currentSharePost.text = text;
-                    currentSharePost.shareTime = DateTime.UtcNow;
-                    currentSharePost.updateTime = DateTime.UtcNow;
-                    db.SharePost.Add(currentSharePost);
-                    db.SaveChanges();
-                    code = 200;
-                    Message = "Post Successfully shared";
-                    return Ok(new { code, Message });
-                }
-                else
-                {
-                    code = 400;
-                    Message = "UnAuthorized Changing";
-                    return BadRequest(new { code, Message });
-                }
-            }
-            else
-            {
-                code = 401;
-                Message = "Login First";
-                return BadRequest(new { code, Message });
-            }
-        }
+        [Route("postList1")]
         public IActionResult sharePostList()
         {
             string Message;
             int code;
             long UserID = Convert.ToInt64(Request.GetHeader("UserID"));
             var isUserExist = db.User.Where(u => u.UserID == UserID).FirstOrDefault();
-
+            
             if (isUserExist != null)
             {
-                var friendlist1 = (from f in db.Friend.Where(u => u.UserID1 ==UserID).ToList()
+                var friendlist1 = (from f in db.Friend.Where(u => u.UserID1 == UserID).ToList()
                                    select new
                                    {
                                        f.UserID2,
@@ -699,5 +729,8 @@ namespace NeeoSocial.APIControllers
 
             }
         }
+
+
+
     }
 }

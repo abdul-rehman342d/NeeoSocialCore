@@ -21,9 +21,9 @@
     <link rel="stylesheet" href="../css/DateTimePicker.css" />
 
     <!--Google Font-->
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,400i,700,700i" rel="stylesheet">
+    <link href="../css//googleFonts.css" rel="stylesheet">
     <!--Favicon-->
-    <link rel="shortcut icon" type="image/png" href="~/images/fav.png" />
+    <link rel="shortcut icon" type="image/png" href="../images/fav.png" />
 </head>
 <body id="app" style="background-color:#335190">
 
@@ -483,39 +483,35 @@
                             if (this.isEmailValid(this.UserReg.email) == false && this.UserReg.email != "") {toastr.error("Invalid Email", "Error!"); }
                             if (this.UserReg.name == "") { toastr.error("Name Required", "Error!") }
                             if (this.UserReg.name != "" && this.isEmailValid(this.UserReg.email) == true && this.UserReg.email != "" && this.UserReg.password != "" && !(this.UserReg.password.length <= 5) && this.UserReg.dateOfBirth != "" && this.UserReg.city != "" && this.UserReg.country != "" && !(this.UserReg.country.length >= 4)) {
-                                var UserRegDate = this.UserReg.dateOfBirth.split('-');
-                                UserRegDate = moment.utc(UserRegDate[2] + "-" + UserRegDate[1] + "-" + UserRegDate[0]);
-                                  var vm = this;
-                                axios({
-                                    method: 'POST',
-                                    url: '/AuthenticationApi/UserRegister',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    data:  JSON.stringify({
-                                    "name": this.UserReg.name,
-                                    "email": this.UserReg.email,
-                                    "password": this.UserReg.password,
-                                    "dateOfBirth": UserRegDate,
-                                    "gender": this.UserReg.gender,
-                                    "city": this.UserReg.city,
-                                    "country": this.UserReg.country
-                                           })
+                                    var UserRegDate = this.UserReg.dateOfBirth.split('-');
+                                    UserRegDate = moment.utc(UserRegDate[2] + "-" + UserRegDate[1] + "-" + UserRegDate[0]);
+                                    var vm = this;
+                                    axios({
+                                        method: 'POST',
+                                        url: '/AuthenticationApi/UserRegister',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        data:  JSON.stringify({
+                                        "name": this.UserReg.name,
+                                        "email": this.UserReg.email,
+                                        "password": this.UserReg.password,
+                                        "dateOfBirth": UserRegDate,
+                                        "gender": this.UserReg.gender,
+                                        "city": this.UserReg.city,
+                                        "country": this.UserReg.country
+                                               })
                             })
                                 .then(function (res) {
-                                    if (res.data["code"] == 200 && res.data["Message"] == "User registered") {
-                                        toastr.success("Please Wait", "Success!");
-                                        toastr.success("Successfully Registered", "Success!");
+                                    if (res.data["code"] == 200 && res.data["message"] == "User registered") {
+                                        //toastr.success("Please Wait", "Success!");
+                                        //toastr.success("Successfully Registered", "Success!");
                                         //window.location = "/Dashboard/home";
 
                                     }
-                                    if (res.data["code"] == 101 && res.data["Message"] == "Email Already Exist") {
+                                    if (res.data["code"] == 101 && res.data["message"] == "Email Already Exist") {
 
                                         toastr.error("Email Already Exist", "Error!");
                                     }
-                                    if (res.data["code"] == 500 && res.data["Message"] == "Unauthorized Changes") {
-
-                                        toastr.error("Unauthorized Changes");
-                                    }
-                                    endReq();
+                                 
                                 })
                                 .then(function (error) {
                                     console.log(error);
@@ -542,16 +538,15 @@
                                     })
                                    .then(function (res) {
                                       
-                                    if (res.data["code"] == 200 && res.data["Message"] == "successfully logged in") {
-                                      
-                                         toastr.success("Succefully Logged in", "Success!");
-                                         Cookies.set('NeeoSocialuserID', res.userID);
-                                        //window.location = "/Dashboard/home";
+                                    if (res.data["code"] == 200 && res.data["message"] == "successfully logged in") {
+                                        Cookies.set('NeeoSocialuserID', res.userID);
+                                        //toastr.success("Succefully Logged in", "Success!");
+                                        //window.location = "../Authentication/index.html";
                                     }
-                                       if (res.data["code"] == 400 && res.data["Message"] == "Incorrect Email or Password") {
+                                    if (res.data["code"] == 400 && res.data["message"] == "Incorrect Email or Password") {
                                         toastr.error("Incorrect Email or Password", "Error!");
                                     }
-                                    if (res.data["code"] == 400 && res.data["Message"] == "No User Exist") { toastr.error("No User Exist", "Error!"); }
+                                    if (res.data["code"] == 400 && res.data["message"] == "No User Exist") { toastr.error("No User Exist", "Error!"); }
 
                                     })
                                     .then(function (error) {
@@ -561,21 +556,7 @@
                         },
                         logout()
                         {
-                            $.ajax(
-                                   {
-                                       type: "POST", //HTTP POST Method
-                                    url: "AuthenticationApi/Logout"/*"Authentication/logout"*/, // Controller/View
-                                       //beforeSend: function (xhr) { xhr.setRequestHeader('Authorization', 'Bearer' + Cookies.get('neeoSocialToken')); },
-
-                                    success: function (res) {
-                                        alert("ok")
-                                       },
-                                       error: function (data) {
-                                           toastr.error("Something went worng,Please Try again", "Error!");
-
-                                       }
-                                   }
-                               );
+                          
                         }
                     },
                 });
