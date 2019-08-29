@@ -245,13 +245,13 @@
                                                 <br /><br /><br />
                                                 <div class="line-divider"></div>
 
-                                                <div class="post-comment" v-for="cm in item.Comments">
+                                                <div class="post-comment" v-for="cm in item.comments">
                                                     <div calss="row">
                                                         <a href="#"><img v-on:click="viewUser(cm.userName.UserID)" v-show="cm.userProfile.imageUrl!=null" v-bind:src="cm.userProfile.imageUrl" alt="" class="profile-photo-sm" /></a>
                                                         <a href="#"><img v-on:click="viewUser(cm.userName.UserID)" v-show="cm.userProfile==null" src="../images/userProfile.png" alt="" class="profile-photo-sm" /></a>
                                                         <p><a href="#" v-on:click="viewUser(cm.userName.UserID)" class="profile-link">{{cm.userName.name}} </a>{{cm.commentText}}</p>
-                                                        <div style="float:right" class="btn text-green" v-on:click="addSubReaction(cm.CommentID, 1)"><a><i class="icon ion-thumbsup"></i></a>{{cm.subAgreeCount}} </div>
-                                                        <div style="float:right" class="btn text-red" v-on:click="addSubReaction(cm.CommentID, 0)"><a><i class="fa fa-thumbs-down"></i></a> {{cm.subDisAgreeCount}}</div>
+                                                        <div style="float:right" class="btn text-green" v-on:click="addSubReaction(cm.commentID, 1)"><a><i class="icon ion-thumbsup"></i></a>{{cm.subAgreeCount}} </div>
+                                                        <div style="float:right" class="btn text-red" v-on:click="addSubReaction(cm.commentID, 0)"><a><i class="fa fa-thumbs-down"></i></a> {{cm.subDisAgreeCount}}</div>
 
                                                         <div class="col-lg-2">
                                                         </div>
@@ -263,8 +263,7 @@
                                                 <div class="post-comment">
                                                     <img v-bind:src="userProfile" alt="" class="profile-photo-sm" />
                                                     <input type="text" class="form-control" id="cmntText" placeholder="Post a comment" v-model="commentAccordingToPost[item.postID]" v-on:keyup.enter="setComment(item.postID)"  maxlength="200">
-                                                    <button v-on:keyup.enter="setComment(item.postID)" class="btn btn-default" style="height:80%;margin-top:5px"><i class="fa fa-comments" aria-hidden="true"></i></button>
-
+                                                    <button v-on:click="setComment(item.postID)" class="btn btn-default" style="height:80%;margin-top:5px"><i class="fa fa-comments" aria-hidden="true"></i></button>
                                                 </div>
                                             </div>
                                         </div>
@@ -560,21 +559,23 @@
                     },
                     uploadPostImagesOnServer() {
                         var vm = this;
-                        var files = new FormData();
+                        var formData = new FormData();
                         var totalFiles = document.getElementById("userPostInput").files.length;
 
                         for (var i = 0; i < totalFiles; i++) {
                             var file = document.getElementById("userPostInput").files[i];
-                            files.append("FileUpload", file);
+                            formData.append("IFormFile", file);
                         }
                        
                         //url: '/ImageApi/UploadImages',
 
-                       axios.post('/ImageApi/UploadImages',
-                            files,
+                        axios.post('/ImageApi/UploadImages',
                             {
-                                headers: {
-                                    'Content-Type': 'multipart/form-data'
+                                files: formData
+                            },
+                            {
+                                headers:{
+                                   'Content-Type': 'multipart/form-data'
                                 }
                             }).then(response => {
                                 alert(`Total Mock File Uploaded: ${response.data}`);
@@ -682,7 +683,6 @@
                         this.Comment.commentText = "";
                         
                     },
-
                     setComment(postID) {
                         this.Comment.PostID = postID;
                         this.Comment.commentText = this.commentAccordingToPost[postID];
@@ -722,20 +722,25 @@
 
                     },
                     addReaction(PostID, reactionType) {
-                        this.Reaction.PostID = PostID;
-                        this.Reaction.UserID = this.User.UserID;
-                        this.Reaction.reactionType = reactionType;
                         var vm = this;
-                        axios.post('/Reaction/addReaction',
+                        axios.post('/ReactionApi/addReaction',
                             {
-                                currentReaction: vm.Reaction,
+                                PostID: PostID,
+                                reactionType: reactionType,
+                                UserID : vm.User.userID
+                            },
+                            {
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'UserID': 1
+                                }
                             })
                             .then(function (res) {
-                                if (res.data["code"] == 200 && res.data["Message"] == "Reaction Successfully added") {
+                                if (res.data["code"] == 200 && res.data["message"] == "Reaction Successfully added") {
                                     vm.listOfPosts();
                                 }
-                                if (res.data["code"] == 400 && res.data["Message"] == "login First") {
-                                    window.location = "/Authentication";
+                                if (res.data["code"] == 400 && res.data["message"] == "login First") {
+                                    //window.location = "/Authentication";
                                 }
                             })
                             .then(function (error) {
@@ -748,15 +753,22 @@
                         this.SubReaction.reactionType = reactionType;
 
                         var vm = this;
-                        axios.post('/Reaction/addSubReaction',
+                        axios.post('/ReactionApi/addSubReaction',
+                             {
+                                CommentID: CommentID,
+                                reactionType: reactionType
+                            },
                             {
-                                currentReaction: vm.SubReaction,
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'UserID': 1
+                                }
                             })
                             .then(function (res) {
-                                if (res.data["code"] == 200 && res.data["Message"] == "Sub Reaction Successfully added") {
+                                if (res.data["code"] == 200 && res.data["message"] == "Sub Reaction Successfully added") {
                                     vm.listOfPosts();
                                 }
-                                if (res.data["code"] == 400 && res.data["Message"] == "login First") {
+                                if (res.data["code"] == 400 && res.data["message"] == "login First") {
                                     window.location = "/Authentication";
                                 }
                             })
@@ -802,23 +814,11 @@
                             })
 
                     },
-                    logout() {
-                        
-                        axios.post('/Authentication/logout')
-                            .then(function (res) {
-                                if (res.data["code"] == 200 && res.data["Message"] == "Successfully logged out") {
-                                    toastr.success("Succefully Logged in", "Success!");
-                                    window.location = "/Authentication";
-                                }
-                                if (res.data["code"] == 400 && res.data["Message"] == "Login First") {
-                                    toastr.error("Login First", "Error!");
-                                    window.location = "/Authentication";
-                                }
-                            })
-                            .then(function (error) {
-                                console.log(error);
-                            })
-
+                    logout()
+                    {
+                        Cookies.remove('NeeoSocialuserID');
+                         document.cookie = "NeeoSocialuserID=; Max-Age=0";
+                         //window.location = "/Authentication";
                     },
 
                     //image Gallery

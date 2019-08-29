@@ -15,6 +15,8 @@ namespace NeeoSocial.APIControllers
     public class ReactionController : ControllerBase
     {
         DbCalls db = new DbCalls();
+        [HttpPost]
+        [Route("addReaction")]
         public IActionResult addReaction(Reaction currentReaction)
         {
             string Message;
@@ -26,6 +28,7 @@ namespace NeeoSocial.APIControllers
                 var isReactionExist = db.Reaction.Where(c => c.UserID == UserID && c.PostID == currentReaction.PostID).FirstOrDefault();
                 if (isReactionExist == null)
                 {
+
                     currentReaction.reactionTime = DateTime.Now;
                     currentReaction.UserID = UserID;
                     db.Reaction.Add(currentReaction);
@@ -57,7 +60,8 @@ namespace NeeoSocial.APIControllers
                 return BadRequest(new { code, Message });
             }
         }
-
+        [HttpPost]
+        [Route("addSubReaction")]
         public IActionResult addSubReaction(SubReaction currentReaction)
         {
             string Message;
@@ -67,12 +71,12 @@ namespace NeeoSocial.APIControllers
 
             if (isUserExist != null && (currentReaction.reactionType == 1 || currentReaction.reactionType == 0))
             {
-               
+                currentReaction.UserID = UserID;
                 var isReactionExist = db.SubReaction.Where(c => c.UserID == UserID && c.CommentID == currentReaction.CommentID).FirstOrDefault();
                 if (isReactionExist == null)
                 {
                     currentReaction.reactionTime = DateTime.Now;
-                    currentReaction.UserID = UserID;
+                    
                     db.SubReaction.Add(currentReaction);
                     db.SaveChanges();
                 }

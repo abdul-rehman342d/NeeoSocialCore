@@ -524,7 +524,7 @@
                             if (this.User.email == "") { toastr.error("Email Required", "Error!"); }
                             if (this.isEmailValid(this.User.email) == false && this.User.email != "") {toastr.error("Invalid Email", "Error!"); }
                             if (this.User.email != "" && this.isEmailValid(this.User.email) == true && this.User.password != "" && !(this.User.password.length <= 5)) {
-                          
+                               
                                axios({
                                     method: 'POST',
                                     url: '/AuthenticationApi/Login',
@@ -539,7 +539,8 @@
                                    .then(function (res) {
                                       
                                     if (res.data["code"] == 200 && res.data["message"] == "successfully logged in") {
-                                        Cookies.set('NeeoSocialuserID', res.userID);
+                                        Cookies.set('NeeoSocialuserID', res.data["userID"]);
+                                         alert(res.data["userID"]);
                                         //toastr.success("Succefully Logged in", "Success!");
                                         //window.location = "../Authentication/index.html";
                                     }
